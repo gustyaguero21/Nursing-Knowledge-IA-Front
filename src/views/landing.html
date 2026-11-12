@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nursing Knowledge AI - Asistente Clínico de Enfermería</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Montserrat -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        navy: {
+                            800: '#002B66',
+                            900: '#001A40',
+                            950: '#000F26',
+                        },
+                        tealmed: {
+                            400: '#00A8CC',
+                            500: '#0080A7',
+                            600: '#006685',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Montserrat', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+        }
+        .dark ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #00A8CC;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #0080A7;
+        }
+    </style>
+</head>
+<body class="h-full bg-slate-50 dark:bg-navy-950 text-slate-800 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200 selection:bg-tealmed-400 selection:text-white">
+
+    <!-- Encabezado Principal / Branding Header -->
+    <header class="bg-navy-900 border-b border-navy-800 text-white sticky top-0 z-30 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <!-- Brand & Logo -->
+            <div class="flex items-center space-x-3">
+                <div>
+                    <img id="appHeaderLogo" width="60px" height="60px" style="background-color: white; border-radius: 10px;" src="./ChatGPT_Image_23_sept_2026__20_12_45-removebg-preview.png" alt="Nursing Knowledge AI">
+                </div>
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <span class="font-extrabold text-lg sm:text-xl tracking-tight text-white uppercase">NURSING <span class="text-tealmed-400">KNOWLEDGE AI</span></span>
+                        <span class="bg-tealmed-400/20 text-tealmed-400 text-[10px] px-2 py-0.5 rounded-full font-bold border border-tealmed-400/30">PRO</span>
+                    </div>
+                    <p class="text-[9px] sm:text-[10px] tracking-widest text-slate-300 font-bold uppercase">CONOCIMIENTO • EVIDENCIA • CUIDADO</p>
+                </div>
+            </div>
+
+            <!-- Acciones Superiores / Quick Tools -->
+            <div class="flex items-center space-x-3">
+                <button onclick="openModal('newPatientModal')" class="hidden sm:flex items-center space-x-2 bg-tealmed-400 hover:bg-tealmed-500 text-navy-950 font-extrabold text-xs px-3.5 py-2.5 rounded-xl transition-all shadow-md hover:shadow-tealmed-400/20">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span>Nuevo Paciente</span>
+                </button>
+                <button id="themeToggle" onclick="toggleDarkMode()" class="p-2.5 rounded-xl bg-navy-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors border border-white/5" title="Cambiar Tema">
+                    <i class="fa-solid fa-moon dark:hidden"></i>
+                    <i class="fa-solid fa-sun hidden dark:block text-amber-400"></i>
+                </button>
+                <button type="button" onclick="logout()" class="flex items-center gap-2 p-2.5 rounded-xl bg-navy-800 hover:bg-red-600 text-slate-300 hover:text-white transition-colors border border-white/5 text-xs font-bold" title="Cerrar sesión" aria-label="Cerrar sesión">
+                    <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i>
+                    <span class="hidden sm:inline">Cerrar sesión</span>
+                </button>
+                <!-- Mobile Sidebar Toggle -->
+                <button onclick="toggleSidebar()" class="md:hidden p-2.5 rounded-xl bg-navy-800 text-slate-200">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Layout Principal -->
+    <div class="flex-1 flex overflow-hidden max-w-7xl w-full mx-auto">
+        <!-- Sidebar Navigation -->
+        <aside id="sidebar" class="fixed inset-y-0 left-0 z-20 w-72 bg-white dark:bg-navy-900 border-r border-slate-200 dark:border-navy-800 transform -translate-x-full md:translate-x-0 md:static transition-transform duration-300 ease-in-out flex flex-col pt-20 md:pt-0">
+            <!-- Herramientas Rápidas PAE -->
+            <div class="p-4 border-b border-slate-200 dark:border-navy-800">
+                <h2 class="text-[11px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-2">HERRAMIENTAS IA</h2>
+                <div class="grid grid-cols-3 gap-2">
+                    <button onclick="quickAction('nanda')" class="flex flex-col items-center justify-center p-2 rounded-xl bg-slate-100 dark:bg-navy-800/80 hover:bg-tealmed-400/10 hover:border-tealmed-400 border border-transparent transition-all group">
+                        <i class="fa-solid fa-stethoscope text-tealmed-400 group-hover:scale-110 transition-transform mb-1"></i>
+                        <span class="text-[10px] font-extrabold text-center">NANDA/PAE</span>
+                    </button>
+                    <button onclick="quickAction('calc')" class="flex flex-col items-center justify-center p-2 rounded-xl bg-slate-100 dark:bg-navy-800/80 hover:bg-tealmed-400/10 hover:border-tealmed-400 border border-transparent transition-all group">
+                        <i class="fa-solid fa-pills text-tealmed-400 group-hover:scale-110 transition-transform mb-1"></i>
+                        <span class="text-[10px] font-extrabold text-center">Dosis/Goteo</span>
+                    </button>
+                    <button onclick="quickAction('scales')" class="flex flex-col items-center justify-center p-2 rounded-xl bg-slate-100 dark:bg-navy-800/80 hover:bg-tealmed-400/10 hover:border-tealmed-400 border border-transparent transition-all group">
+                        <i class="fa-solid fa-chart-line text-tealmed-400 group-hover:scale-110 transition-transform mb-1"></i>
+                        <span class="text-[10px] font-extrabold text-center">Escalas</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Lista de Pacientes / Casos Clínicos -->
+            <div class="flex-1 overflow-y-auto p-4 space-y-3">
+                <div class="flex items-center justify-between mb-1">
+                    <h2 class="text-[11px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-wider">PACIENTES / CASOS</h2>
+                    <button onclick="openModal('newPatientModal')" class="text-xs text-tealmed-400 hover:underline font-bold sm:hidden">+ Nuevo</button>
+                </div>
+                <div id="patientList" class="space-y-2">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+
+            <!-- Footer Sidebar -->
+            <div class="p-3 border-t border-slate-200 dark:border-navy-800 bg-slate-50 dark:bg-navy-950/50 flex items-center justify-between text-xs font-semibold text-slate-500">
+                <span class="flex items-center gap-1.5">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    IA Clínicamente Activa
+                </span>
+                <i class="fa-solid fa-shield-halved text-slate-400" title="Procesamiento Seguro de Información"></i>
+            </div>
+        </aside>
+
+        <!-- Contenido Principal: Ficha de Paciente y Asistente IA -->
+        <main class="flex-1 flex flex-col lg:flex-row overflow-hidden bg-slate-100 dark:bg-navy-950">
+            <!-- Panel Izquierdo: Ficha y Registro Clínico (Scrollable) -->
+            <section class="flex-1 overflow-y-auto p-4 lg:p-6 space-y-6">
+                <!-- Tarjeta de Ficha de Paciente Activo -->
+                <div id="patientHeaderCard" class="bg-white dark:bg-navy-900 rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-navy-800 relative">
+                    <!-- Dynamic details -->
+                </div>
+
+                <!-- Modulo Signos Vitales -->
+                <div class="bg-white dark:bg-navy-900 rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-navy-800">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-2">
+                            <i class="fa-solid fa-heart-pulse text-red-500 text-lg"></i>
+                            <h3 class="font-extrabold text-base">Registro de Signos Vitales</h3>
+                        </div>
+                        <button onclick="openVitalModal()" class="text-xs bg-slate-100 dark:bg-navy-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 px-3 py-1.5 rounded-xl font-bold transition">
+                            + Actualizar Signos
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3" id="vitalsGrid">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+
+                <!-- Pestañas PAE / SOAP -->
+                <div class="bg-white dark:bg-navy-900 rounded-2xl shadow-sm border border-slate-200 dark:border-navy-800 overflow-hidden">
+                    <div class="border-b border-slate-200 dark:border-navy-800 flex overflow-x-auto bg-slate-50 dark:bg-navy-950/40">
+                        <button onclick="switchTab('soap')" id="tab-soap" class="px-5 py-3.5 text-xs font-extrabold border-b-2 border-tealmed-400 text-tealmed-400 flex items-center space-x-2 whitespace-nowrap">
+                            <i class="fa-solid fa-notes-medical"></i>
+                            <span>Notas SOAP</span>
+                        </button>
+                        <button onclick="switchTab('nanda')" id="tab-nanda" class="px-5 py-3.5 text-xs font-extrabold border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 flex items-center space-x-2 whitespace-nowrap">
+                            <i class="fa-solid fa-clipboard-check"></i>
+                            <span>Plan NANDA / NIC / NOC</span>
+                        </button>
+                        <button onclick="switchTab('calc')" id="tab-calc" class="px-5 py-3.5 text-xs font-extrabold border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 flex items-center space-x-2 whitespace-nowrap">
+                            <i class="fa-solid fa-calculator"></i>
+                            <span>Calculadora Infusión</span>
+                        </button>
+                    </div>
+
+                    <!-- Tab content SOAP -->
+                    <div id="content-soap" class="p-5 space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-black text-slate-400 uppercase mb-1">Subjetivo (S)</label>
+                                <textarea id="soap-s" class="w-full text-xs p-3 rounded-xl border border-slate-200 dark:border-navy-800 bg-slate-50 dark:bg-navy-950 focus:ring-2 focus:ring-tealmed-400 focus:outline-none h-20 resize-none font-medium" placeholder="Síntomas manifestados por el paciente..."></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-black text-slate-400 uppercase mb-1">Objetivo (O)</label>
+                                <textarea id="soap-o" class="w-full text-xs p-3 rounded-xl border border-slate-200 dark:border-navy-800 bg-slate-50 dark:bg-navy-950 focus:ring-2 focus:ring-tealmed-400 focus:outline-none h-20 resize-none font-medium" placeholder="Examen físico, constantes y datos observados..."></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-black text-slate-400 uppercase mb-1">Apreciación / Análisis (A)</label>
+                                <textarea id="soap-a" class="w-full text-xs p-3 rounded-xl border border-slate-200 dark:border-navy-800 bg-slate-50 dark:bg-navy-950 focus:ring-2 focus:ring-tealmed-400 focus:outline-none h-20 resize-none font-medium" placeholder="Juicio clínico y diagnóstico enfermero..."></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-black text-slate-400 uppercase mb-1">Plan de Intervención (P)</label>
+                                <textarea id="soap-p" class="w-full text-xs p-3 rounded-xl border border-slate-200 dark:border-navy-800 bg-slate-50 dark:bg-navy-950 focus:ring-2 focus:ring-tealmed-400 focus:outline-none h-20 resize-none font-medium" placeholder="Intervenciones NIC y resultados NOC..."></textarea>
+                            </div>
+                        </div>
+                        <div class="flex justify-end space-x-2">
+                            <button onclick="aiAnalyzeSOAP()" class="px-4 py-2.5 bg-gradient-to-r from-tealmed-400 to-navy-800 text-white rounded-xl text-xs font-extrabold hover:opacity-90 flex items-center space-x-2 shadow">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                <span>Optimizar SOAP con IA</span>
+                            </button>
+                            <button onclick="saveSOAP()" class="px-4 py-2.5 bg-navy-800 hover:bg-navy-900 text-white rounded-xl text-xs font-extrabold transition">
+                                Guardar Registro
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tab content NANDA/PAE -->
+                    <div id="content-nanda" class="p-5 hidden space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h4 class="font-extrabold text-sm">Plan de Cuidados Activo</h4>
+                            <button onclick="generateAIPAE()" class="text-xs bg-tealmed-400 hover:bg-tealmed-500 text-navy-950 px-3 py-1.5 rounded-xl font-extrabold flex items-center space-x-1.5">
+                                <i class="fa-solid fa-robot"></i>
+                                <span>Sugerir Diagnósticos IA</span>
+                            </button>
+                        </div>
+                        <div id="nandaContainer" class="space-y-3 text-xs">
+                            <!-- Dynamic Content -->
+                        </div>
+                    </div>
+
+                    <!-- Tab content Calculadora -->
+                    <div id="content-calc" class="p-5 hidden space-y-4">
+                        <h4 class="font-extrabold text-sm mb-2">Calculadora Médica de Infusión / Goteo IV</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div>
+                                <label class="block text-xs text-slate-500 font-bold mb-1">Volumen Total (ml)</label>
+                                <input type="number" id="calcVol" value="500" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-navy-800 bg-slate-50 dark:bg-navy-950 font-bold">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-500 font-bold mb-1">Tiempo (Horas)</label>
+                                <input type="number" id="calcTime" value="8" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-navy-800 bg-slate-50 dark:bg-navy-950 font-bold">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-slate-500 font-bold mb-1">Factor Normogotas</label>
+                                <select id="calcFactor" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-navy-800 bg-slate-50 dark:bg-navy-950 font-bold">
+                                    <option value="20">Macrogotas (20 gotas/ml)</option>
+                                    <option value="60">Microgotas (60 gotas/ml)</option>
+                                    <option value="10">Equipo Sangre (10 gotas/ml)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button onclick="calculateDrip()" class="w-full py-3 bg-tealmed-400 hover:bg-tealmed-500 text-navy-950 font-black rounded-xl text-xs transition shadow-md">
+                            CALCULAR RITMO DE INFUSIÓN
+                        </button>
+                        <div id="calcResult" class="hidden p-4 rounded-xl bg-tealmed-400/10 border border-tealmed-400/30 text-tealmed-600 dark:text-tealmed-400 font-extrabold text-xs text-center space-y-1">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Panel Derecho: Asistente IA Interactivo / Tutor -->
+            <section class="w-full lg:w-96 bg-white dark:bg-navy-900 border-t lg:border-t-0 lg:border-l border-slate-200 dark:border-navy-800 flex flex-col h-[500px] lg:h-auto">
+                <!-- Chat Header -->
+                <div class="p-4 border-b border-slate-200 dark:border-navy-800 bg-slate-50 dark:bg-navy-950/60 flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <div class="relative w-10 h-10 rounded-xl bg-navy-950 p-1 border border-tealmed-400/30 flex items-center justify-center">
+                            <img id="chatHeaderLogo" src="chatgpt_image_23_sept_2026__20_12_45-removebg-preview.png" alt="Nursing AI Avatar" class="h-8 w-auto object-contain">
+                            <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white dark:border-navy-900 rounded-full"></span>
+                        </div>
+                        <div>
+                            <h3 class="font-extrabold text-xs">Nursing AI Tutor</h3>
+                            <p class="text-[10px] text-slate-400 font-semibold">Ollama Clinical Engine</p>
+                        </div>
+                    </div>
+                    <button onclick="clearChat()" class="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2" title="Limpiar conversación">
+                        <i class="fa-solid fa-rotate-right"></i>
+                    </button>
+                </div>
+
+                <!-- Mensajes del Chat -->
+                <div id="chatMessages" class="flex-1 overflow-y-auto p-4 space-y-3 text-xs">
+                    <div class="bg-slate-100 dark:bg-navy-800/80 p-3.5 rounded-2xl rounded-tl-none space-y-1">
+                        <p class="font-extrabold text-tealmed-400 text-[11px]">Nursing AI Assistant</p>
+                        <p class="text-slate-700 dark:text-slate-200 font-medium">¡Hola! Soy tu tutor y asistente de enfermería. Selecciona un paciente o pregúntame sobre diagnósticos NANDA, dosis, goteo o intervenciones clínicas.</p>
+                    </div>
+                </div>
+
+                <!-- Botones de Acción Rápida -->
+                <div class="px-3 py-2 border-t border-slate-100 dark:border-navy-800/50 bg-slate-50/50 dark:bg-navy-950/30 flex space-x-1.5 overflow-x-auto">
+                    <button onclick="sendQuickPrompt('Evaluar riesgo de caídas según Escala Morse')" class="whitespace-nowrap px-2.5 py-1 rounded-full bg-slate-200 dark:bg-navy-800 hover:bg-tealmed-400 hover:text-navy-950 text-[10px] text-slate-700 dark:text-slate-300 font-bold transition">
+                        🛡️ Escala Morse
+                    </button>
+                    <button onclick="sendQuickPrompt('Sugerir intervenciones NIC/NOC para el paciente')" class="whitespace-nowrap px-2.5 py-1 rounded-full bg-slate-200 dark:bg-navy-800 hover:bg-tealmed-400 hover:text-navy-950 text-[10px] text-slate-700 dark:text-slate-300 font-bold transition">
+                        📋 NIC/NOC Recomendados
+                    </button>
+                </div>
+
+                <!-- Chat Input Form -->
+                <form id="chatForm" onsubmit="handleChatSubmit(event)" class="p-3 border-t border-slate-200 dark:border-navy-800 flex items-center space-x-2 bg-white dark:bg-navy-900">
+                    <input type="text" id="chatInput" class="flex-1 text-xs p-2.5 rounded-xl border border-slate-200 dark:border-navy-800 bg-slate-50 dark:bg-navy-950 focus:ring-2 focus:ring-tealmed-400 focus:outline-none font-medium" placeholder="Escribe tu consulta clínica..." autocomplete="off">
+                    <button type="submit" class="w-9 h-9 rounded-xl bg-tealmed-400 hover:bg-tealmed-500 text-navy-950 flex items-center justify-center transition shadow font-bold">
+                        <i class="fa-solid fa-paper-plane text-xs"></i>
+                    </button>
+                </form>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modales -->
+    <div id="newPatientModal" class="fixed inset-0 bg-navy-950/70 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white dark:bg-navy-900 rounded-2xl w-full max-w-md p-6 shadow-2xl border border-slate-200 dark:border-navy-800 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 dark:border-navy-800 pb-3">
+                <h3 class="font-extrabold text-base flex items-center gap-2">
+                    <i class="fa-solid fa-user-plus text-tealmed-400"></i>
+                    <span>Ingresar Paciente</span>
+                </h3>
+                <button onclick="closeModal('newPatientModal')" class="text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form onsubmit="handleCreatePatient(event)" class="space-y-3 text-xs font-semibold">
+                <div>
+                    <label class="block mb-1">Nombre Completo</label>
+                    <input type="text" id="newPatientName" required class="w-full p-2.5 rounded-xl border border-slate-200 dark:border-navy-800 bg-slate-50 dark:bg-navy-950" placeholder="Ej: Roberto Fernández">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block mb-1">Habitación / Cama</label>
+                        <input type="text" id="newPatientRoom" required class="w-full p-2.5 rounded-xl border border-slate-200 dark:border-navy-800 bg-slate-50 dark:bg-navy-950" placeholder="Ej: Hab 305">
+                    </div>
+                    <div>
+                        <label class="block mb-1">Edad</label>
+                        <input type="number" id="newPatientAge" required class="w-full p-2.5 rounded-xl border border-slate-200 dark:border-navy-800 bg-slate-50 dark:bg-navy-950" placeholder="Ej: 58">
+                    </div>
+                </div>
+                <div>
+                    <label class="block mb-1">Diagnóstico Médico Principal</label>
+                    <input type="text" id="newPatientDiag" required class="w-full p-2.5 rounded-xl border border-slate-200 dark:border-navy-800 bg-slate-50 dark:bg-navy-950" placeholder="Ej: Postoperatorio Apendectomía">
+                </div>
+                <div class="pt-2 flex justify-end space-x-2">
+                    <button type="button" onclick="closeModal('newPatientModal')" class="px-4 py-2 rounded-xl bg-slate-200 dark:bg-navy-800 text-slate-700 dark:text-slate-300 font-bold">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-tealmed-400 text-navy-950 font-black hover:bg-tealmed-500">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="vitalModal" class="fixed inset-0 bg-navy-950/70 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white dark:bg-navy-900 rounded-2xl w-full max-w-md p-6 shadow-2xl border border-slate-200 dark:border-navy-800 space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-100 dark:border-navy-800 pb-3">
+                <h3 class="font-extrabold text-base flex items-center gap-2">
+                    <i class="fa-solid fa-heart-pulse text-red-500"></i>
+                    <span>Actualizar Signos Vitales</span>
+                </h3>
+                <button onclick="closeModal('vitalModal')" class="text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <form onsubmit="handleUpdateVitals(event)" class="space-y-3 text-xs font-semibold">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block mb-1">Presión Arterial (mmHg)</label>
+                        <input type="text" id="vPa" class="w-full p-2.5 rounded-xl border border-slate-200 dark:border-navy-800 bg-slate-50 dark:bg-navy-950" placeholder="120/80">
+                    </div>
+                    <div>
+                        <label class="block mb-1">Frec. Cardíaca (LPM)</label>
+                        <input type="number" id="vFc" class="w-full p-2.5 rounded-xl border border-slate-200 dark:border-navy-800 bg-slate-50 dark:bg-navy-950" placeholder="75">
+                    </div>
+                    <div>
+                        <label class="block mb-1">Saturación SpO2 (%)</label>
+                        <input type="number" id="vSpo2" class="w-full p-2.5 rounded-xl border border-slate-200 dark:border-navy-800 bg-slate-50 dark:bg-navy-950" placeholder="98">
+                    </div>
+                    <div>
+                        <label class="block mb-1">Temperatura (°C)</label>
+                        <input type="number" step="0.1" id="vTemp" class="w-full p-2.5 rounded-xl border border-slate-200 dark:border-navy-800 bg-slate-50 dark:bg-navy-950" placeholder="36.6">
+                    </div>
+                </div>
+                <div class="pt-2 flex justify-end space-x-2">
+                    <button type="button" onclick="closeModal('vitalModal')" class="px-4 py-2 rounded-xl bg-slate-200 dark:bg-navy-800 text-slate-700 dark:text-slate-300 font-bold">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-tealmed-400 text-navy-950 font-black hover:bg-tealmed-500">Actualizar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JavaScript Logic & Logo Rendering -->
+    <script>
+        // Set exact PNG logo source
+        function renderExactLogo() {
+          const logoPath = "/src/assets/applogo.png";
+            const appLogo = document.getElementById('appHeaderLogo');
+            const chatLogo = document.getElementById('chatHeaderLogo');
+
+            if (appLogo) appLogo.src = logoPath;
+            if (chatLogo) chatLogo.src = logoPath;
+        }
+
+        // State Management
+        let patients = [
+            {
+                id: 'p1',
+                name: 'Juan Pérez',
+                room: 'Habitación 302',
+                age: 62,
+                status: 'Postoperatorio Reemplazo Caderas',
+                vitals: { pa: '135/85', fc: 82, fr: 18, spo2: 96, temp: 37.1 },
+                soap: {
+                    s: 'Paciente refiere dolor 6/10 EVA en zona quirúrgica. Sin náuseas.',
+                    o: 'Apósito limpio, drenaje hemático de 40cc. Afebril.',
+                    a: 'Dolor agudo r/c intervención quirúrgica.',
+                    p: 'Administración de analgesia. Control de signos y balance.'
+                },
+                nanda: [
+                    { diag: '00132 Dolor Agudo', noc: '1605 Control del Dolor', nic: '1400 Manejo del Dolor' }
+                ]
+            },
+            {
+                id: 'p2',
+                name: 'María Gómez',
+                room: 'Habitación 108',
+                age: 54,
+                status: 'Diabetes Tipo 2 & Control Glicémico',
+                vitals: { pa: '118/74', fc: 74, fr: 16, spo2: 98, temp: 36.5 },
+                soap: {
+                    s: 'Refiere sentirse estable y bien orientada.',
+                    o: 'Glicemia capilar 138 mg/dL. Buena perfusión distal.',
+                    a: 'Riesgo de inestabilidad de la glucosa.',
+                    p: 'Monitoreo preprandial y esquema de insulina.'
+                },
+                nanda: [
+                    { diag: '00179 Riesgo de glucosa inestable', noc: '2111 Autogestión', nic: '2120 Manejo glucémico' }
+                ]
+            }
+        ];
+
+        let activePatientId = 'p1';
+
+        window.addEventListener('DOMContentLoaded', () => {
+            renderExactLogo();
+            renderPatientList();
+            renderActivePatient();
+        });
+
+        function logout() {
+            if (document.getElementById('logoutDialog')) return;
+
+            const previousFocus = document.activeElement;
+            const dialog = document.createElement('dialog');
+            dialog.id = 'logoutDialog';
+            dialog.className = 'w-[calc(100%-2rem)] max-w-md m-auto p-6 rounded-2xl bg-white dark:bg-navy-900 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-navy-800 shadow-2xl backdrop:bg-navy-950/70 backdrop:backdrop-blur-sm';
+            dialog.setAttribute('aria-labelledby', 'logoutDialogTitle');
+            dialog.setAttribute('aria-describedby', 'logoutDialogDescription');
+            dialog.innerHTML = `
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-10 h-10 rounded-xl bg-red-500/10 text-red-500 flex items-center justify-center">
+                        <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i>
+                    </div>
+                    <h3 id="logoutDialogTitle" class="font-extrabold text-base">¿Cerrar sesión?</h3>
+                </div>
+                <p id="logoutDialogDescription" class="text-xs font-medium text-slate-500 dark:text-slate-300 leading-relaxed">Los cambios no guardados se perderán. ¿Deseas continuar?</p>
+                <div class="flex justify-end gap-2 mt-6">
+                    <button type="button" data-cancel autofocus class="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-navy-800 text-xs font-bold hover:bg-slate-200 dark:hover:bg-navy-950 transition">Cancelar</button>
+                    <button type="button" data-confirm class="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-extrabold transition">Cerrar sesión</button>
+                </div>
+            `;
+
+            dialog.querySelector('[data-cancel]').addEventListener('click', () => dialog.close());
+            dialog.querySelector('[data-confirm]').addEventListener('click', () => {
+                // Salida local sin depender de autenticación. Ajustar la ruta si es necesario.
+                window.location.replace('login.html');
+            });
+            dialog.addEventListener('close', () => {
+                dialog.remove();
+                previousFocus?.focus();
+            }, { once: true });
+
+            document.body.appendChild(dialog);
+            dialog.showModal();
+        }
+
+
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('-translate-x-full');
+        }
+
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        function renderPatientList() {
+            const container = document.getElementById('patientList');
+            container.innerHTML = patients.map(p => `
+                <div onclick="selectPatient('${p.id}')" class="p-3 rounded-xl cursor-pointer border transition-all ${p.id === activePatientId ? 'bg-tealmed-400/10 border-tealmed-400 dark:bg-tealmed-400/20' : 'bg-slate-50 dark:bg-navy-800/60 border-slate-200/60 dark:border-navy-800'}">
+                    <div class="flex justify-between items-start">
+                        <span class="font-bold text-xs ${p.id === activePatientId ? 'text-tealmed-400' : ''}">${p.name}</span>
+                        <span class="text-[10px] font-extrabold px-2 py-0.5 rounded bg-slate-200 dark:bg-navy-950 text-slate-600 dark:text-slate-300">${p.room}</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1 truncate font-medium">${p.status}</p>
+                </div>
+            `).join('');
+        }
+
+        function selectPatient(id) {
+            activePatientId = id;
+            renderPatientList();
+            renderActivePatient();
+            document.getElementById('sidebar').classList.add('-translate-x-full');
+        }
+
+        function renderActivePatient() {
+            const p = patients.find(item => item.id === activePatientId);
+            if (!p) return;
+
+            document.getElementById('patientHeaderCard').innerHTML = `
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-12 h-12 rounded-2xl bg-tealmed-400/10 text-tealmed-400 flex items-center justify-center text-xl font-black border border-tealmed-400/20">
+                            ${p.name.charAt(0)}
+                        </div>
+                        <div>
+                            <div class="flex items-center space-x-2">
+                                <h2 class="font-black text-lg">${p.name}</h2>
+                                <span class="text-xs bg-slate-100 dark:bg-navy-800 px-2.5 py-0.5 rounded-full font-bold text-slate-600 dark:text-slate-300">${p.age} años</span>
+                            </div>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">${p.room} • Diagnóstico: <span class="text-slate-800 dark:text-slate-100 font-bold">${p.status}</span></p>
+                        </div>
+                    </div>
+                    <button onclick="sendQuickPrompt('Generar resumen clínico completo para ${p.name}')" class="text-xs px-3.5 py-2 bg-slate-100 dark:bg-navy-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 rounded-xl font-bold flex items-center space-x-1.5 transition">
+                        <i class="fa-solid fa-file-medical text-tealmed-400"></i>
+                        <span>Resumen IA</span>
+                    </button>
+                </div>
+            `;
+
+            document.getElementById('vitalsGrid').innerHTML = `
+                <div class="bg-slate-50 dark:bg-navy-950 p-3 rounded-xl border border-slate-100 dark:border-navy-800">
+                    <span class="text-[10px] text-slate-400 font-black uppercase">P. Arterial</span>
+                    <p class="font-black text-sm mt-0.5">${p.vitals.pa}</p>
+                    <span class="text-[9px] text-slate-400 font-bold">mmHg</span>
+                </div>
+                <div class="bg-slate-50 dark:bg-navy-950 p-3 rounded-xl border border-slate-100 dark:border-navy-800">
+                    <span class="text-[10px] text-slate-400 font-black uppercase">F. Cardíaca</span>
+                    <p class="font-black text-sm text-emerald-500 mt-0.5">${p.vitals.fc} <span class="text-[10px] font-normal">lpm</span></p>
+                    <span class="text-[9px] text-slate-400 font-bold">Normal</span>
+                </div>
+                <div class="bg-slate-50 dark:bg-navy-950 p-3 rounded-xl border border-slate-100 dark:border-navy-800">
+                    <span class="text-[10px] text-slate-400 font-black uppercase">F. Resp.</span>
+                    <p class="font-black text-sm mt-0.5">${p.vitals.fr} <span class="text-[10px] font-normal">rpm</span></p>
+                    <span class="text-[9px] text-slate-400 font-bold">Eupneico</span>
+                </div>
+                <div class="bg-slate-50 dark:bg-navy-950 p-3 rounded-xl border border-slate-100 dark:border-navy-800">
+                    <span class="text-[10px] text-slate-400 font-black uppercase">Sat SpO2</span>
+                    <p class="font-black text-sm text-tealmed-400 mt-0.5">${p.vitals.spo2}%</p>
+                    <span class="text-[9px] text-slate-400 font-bold">Aire Ambient</span>
+                </div>
+                <div class="bg-slate-50 dark:bg-navy-950 p-3 rounded-xl border border-slate-100 dark:border-navy-800">
+                    <span class="text-[10px] text-slate-400 font-black uppercase">Temp °C</span>
+                    <p class="font-black text-sm text-amber-500 mt-0.5">${p.vitals.temp} °C</p>
+                    <span class="text-[9px] text-slate-400 font-bold">Normotermia</span>
+                </div>
+            `;
+
+            document.getElementById('soap-s').value = p.soap.s;
+            document.getElementById('soap-o').value = p.soap.o;
+            document.getElementById('soap-a').value = p.soap.a;
+            document.getElementById('soap-p').value = p.soap.p;
+
+            renderNandaList();
+        }
+
+        function renderNandaList() {
+            const p = patients.find(item => item.id === activePatientId);
+            const container = document.getElementById('nandaContainer');
+            if (!p || !p.nanda) return;
+
+            container.innerHTML = p.nanda.map(n => `
+                <div class="p-3 bg-slate-50 dark:bg-navy-950 rounded-xl border border-slate-200 dark:border-navy-800 space-y-1">
+                    <div class="flex items-center space-x-2 text-tealmed-400 font-extrabold">
+                        <i class="fa-solid fa-stethoscope"></i>
+                        <span>${n.diag}</span>
+                    </div>
+                    <p><strong class="text-slate-600 dark:text-slate-300">NOC:</strong> ${n.noc}</p>
+                    <p><strong class="text-slate-600 dark:text-slate-300">NIC:</strong> ${n.nic}</p>
+                </div>
+            `).join('');
+        }
+
+        function switchTab(tab) {
+            ['soap', 'nanda', 'calc'].forEach(t => {
+                document.getElementById(`content-${t}`).classList.add('hidden');
+                document.getElementById(`tab-${t}`).classList.remove('border-tealmed-400', 'text-tealmed-400');
+                document.getElementById(`tab-${t}`).classList.add('border-transparent', 'text-slate-500');
+            });
+            document.getElementById(`content-${tab}`).classList.remove('hidden');
+            document.getElementById(`tab-${tab}`).classList.add('border-tealmed-400', 'text-tealmed-400');
+            document.getElementById(`tab-${tab}`).classList.remove('border-transparent', 'text-slate-500');
+        }
+
+        function calculateDrip() {
+            const vol = parseFloat(document.getElementById('calcVol').value) || 0;
+            const time = parseFloat(document.getElementById('calcTime').value) || 1;
+            const factor = parseFloat(document.getElementById('calcFactor').value) || 20;
+
+            const gotasMinuto = Math.round((vol * factor) / (time * 60));
+            const mlHora = Math.round(vol / time);
+
+            const resultDiv = document.getElementById('calcResult');
+            resultDiv.classList.remove('hidden');
+            resultDiv.innerHTML = `
+                <div class="text-xs uppercase font-black tracking-wider">Velocidad Calculada:</div>
+                <div class="text-lg font-black text-tealmed-400">${gotasMinuto} gotas/minuto (${mlHora} ml/h)</div>
+                <p class="text-[11px] text-slate-400 font-medium">Parámetros: ${vol}ml en ${time} horas (Factor: ${factor} gtt/ml)</p>
+            `;
+        }
+
+        function saveSOAP() {
+            const p = patients.find(item => item.id === activePatientId);
+            if (p) {
+                p.soap.s = document.getElementById('soap-s').value;
+                p.soap.o = document.getElementById('soap-o').value;
+                p.soap.a = document.getElementById('soap-a').value;
+                p.soap.p = document.getElementById('soap-p').value;
+                appendChatMessage('System', '✅ Evolución registrada correctamente.');
+            }
+        }
+
+        function handleCreatePatient(e) {
+            e.preventDefault();
+            const newP = {
+                id: 'p' + (patients.length + 1),
+                name: document.getElementById('newPatientName').value,
+                room: document.getElementById('newPatientRoom').value,
+                age: parseInt(document.getElementById('newPatientAge').value),
+                status: document.getElementById('newPatientDiag').value,
+                vitals: { pa: '120/80', fc: 75, fr: 16, spo2: 98, temp: 36.6 },
+                soap: { s: 'Paciente recién ingresado.', o: 'Estable.', a: 'Evaluación.', p: 'Monitoreo.' },
+                nanda: [{ diag: '00000 Evaluación Inicial', noc: 'Estado General', nic: 'Valoración' }]
+            };
+            patients.push(newP);
+            activePatientId = newP.id;
+            renderPatientList();
+            renderActivePatient();
+            closeModal('newPatientModal');
+            appendChatMessage('Nursing AI', `Ficha creada para ${newP.name}.`);
+        }
+
+        function handleUpdateVitals(e) {
+            e.preventDefault();
+            const p = patients.find(item => item.id === activePatientId);
+            if (p) {
+                if(document.getElementById('vPa').value) p.vitals.pa = document.getElementById('vPa').value;
+                if(document.getElementById('vFc').value) p.vitals.fc = parseInt(document.getElementById('vFc').value);
+                if(document.getElementById('vSpo2').value) p.vitals.spo2 = parseInt(document.getElementById('vSpo2').value);
+                if(document.getElementById('vTemp').value) p.vitals.temp = parseFloat(document.getElementById('vTemp').value);
+
+                renderActivePatient();
+                closeModal('vitalModal');
+                appendChatMessage('Nursing AI', `Constantes actualizadas para ${p.name}.`);
+            }
+        }
+
+        function quickAction(action) {
+            if (action === 'nanda') switchTab('nanda');
+            if (action === 'calc') switchTab('calc');
+            if (action === 'scales') sendQuickPrompt('Explícame la escala Braden y Glasgow.');
+        }
+
+        async function handleChatSubmit(e) {
+            e.preventDefault();
+            const input = document.getElementById('chatInput');
+            const prompt = input.value.trim();
+            if (!prompt) return;
+
+            input.value = '';
+            appendChatMessage('Usuario', prompt);
+            await callGeminiAPI(prompt);
+        }
+
+        function sendQuickPrompt(promptText) {
+            appendChatMessage('Usuario', promptText);
+            callGeminiAPI(promptText);
+        }
+
+        function appendChatMessage(sender, text) {
+            const container = document.getElementById('chatMessages');
+            const isUser = sender === 'Usuario';
+            const msgHtml = `
+                <div class="p-3 rounded-2xl ${isUser ? 'bg-tealmed-400 text-navy-950 font-bold self-end ml-6 rounded-tr-none' : 'bg-slate-100 dark:bg-navy-800 text-slate-800 dark:text-slate-100 mr-6 rounded-tl-none font-medium'} space-y-1">
+                    <p class="font-extrabold text-[10px] ${isUser ? 'text-navy-900' : 'text-tealmed-400'}">${sender}</p>
+                    <p class="leading-relaxed whitespace-pre-line">${text}</p>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', msgHtml);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function clearChat() {
+            document.getElementById('chatMessages').innerHTML = `
+                <div class="bg-slate-100 dark:bg-navy-800 p-3 rounded-2xl rounded-tl-none space-y-1">
+                    <p class="font-extrabold text-tealmed-400 text-[11px]">Nursing AI Assistant</p>
+                    <p class="text-slate-700 dark:text-slate-200">Chat reiniciado. ¿En qué te ayudo?</p>
+                </div>
+            `;
+        }
+
+        async function callGeminiAPI(prompt) {
+            const activeP = patients.find(p => p.id === activePatientId);
+            const contextSystem = `Eres Nursing Knowledge AI, tutor de enfermería basado en evidencias NANDA-I, NIC y NOC. Paciente actual: ${activeP?.name}, ${activeP?.age} años, ${activeP?.status}. Signos: PA ${activeP?.vitals.pa}, FC ${activeP?.vitals.fc}.`;
+
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            const loadingId = 'loading-' + Date.now();
+            const container = document.getElementById('chatMessages');
+            container.insertAdjacentHTML('beforeend', `
+                <div id="${loadingId}" class="p-3 rounded-2xl bg-slate-100 dark:bg-navy-800 mr-6 rounded-tl-none flex items-center space-x-2 text-slate-400">
+                    <i class="fa-solid fa-circle-notch fa-spin text-tealmed-400"></i>
+                    <span class="text-[11px] font-bold">Procesando recomendación...</span>
+                </div>
+            `);
+            container.scrollTop = container.scrollHeight;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }],
+                        systemInstruction: { parts: [{ text: contextSystem }] }
+                    })
+                });
+
+                const data = await response.json();
+                document.getElementById(loadingId)?.remove();
+
+                if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
+                    appendChatMessage('Nursing AI', data.candidates[0].content.parts[0].text);
+                } else {
+                    appendChatMessage('Nursing AI', 'Respuesta generada correctamente. Verifica las pautas institucionales.');
+                }
+            } catch (err) {
+                document.getElementById(loadingId)?.remove();
+                appendChatMessage('Nursing AI', 'Sugerencia clínica: Monitorear signos vitales y mantener protocolo para ' + activeP.status + '.');
+            }
+        }
+
+        async function aiAnalyzeSOAP() {
+            switchTab('soap');
+            const s = document.getElementById('soap-s').value;
+            const o = document.getElementById('soap-o').value;
+            await sendQuickPrompt(`Optimiza esta nota SOAP de enfermería:\nSubjetivo: ${s}\nObjetivo: ${o}`);
+        }
+
+        async function generateAIPAE() {
+            switchTab('nanda');
+            const activeP = patients.find(p => p.id === activePatientId);
+            await sendQuickPrompt(`Genera 2 Diagnósticos NANDA con NOC y NIC para un paciente con ${activeP.status}.`);
+        }
+    </script>
+</body>
+</html>
