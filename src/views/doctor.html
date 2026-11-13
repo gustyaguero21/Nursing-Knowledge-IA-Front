@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nursing Knowledge AI - Panel médico</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: {
+                colors: {
+                    navy: { 800: '#002B66', 900: '#001A40', 950: '#000F26' },
+                    tealmed: { 400: '#00A8CC', 500: '#0080A7', 600: '#006685' }
+                },
+                fontFamily: { sans: ['Montserrat', 'sans-serif'] }
+            } }
+        }
+    </script>
+    <style>
+        body { font-family: 'Montserrat', sans-serif; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,.05); }
+        .dark ::-webkit-scrollbar-track { background: rgba(255,255,255,.05); }
+        ::-webkit-scrollbar-thumb { background: #00A8CC; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #0080A7; }
+        button:focus-visible { outline: 2px solid #00A8CC; outline-offset: 2px; }
+        @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+    </style>
+</head>
+<body class="h-full bg-slate-50 dark:bg-navy-950 text-slate-800 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200 selection:bg-tealmed-400 selection:text-white">
+
+    <!-- Encabezado -->
+    <header class="bg-navy-900 border-b border-navy-800 text-white sticky top-0 z-30 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-[52px] h-[52px] bg-white rounded-[10px] flex items-center justify-center">
+                    <img src="/src/assets/applogo.png" alt="Nursing Knowledge AI" class="w-full h-full object-contain rounded-[10px]">
+                </div>
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <span class="font-extrabold text-lg sm:text-xl tracking-tight text-white uppercase">NURSING <span class="text-tealmed-400">KNOWLEDGE AI</span></span>
+                        <span class="bg-tealmed-400/20 text-tealmed-400 text-[10px] px-2 py-0.5 rounded-full font-bold border border-tealmed-400/30">MÉDICO</span>
+                    </div>
+                    <p class="text-[9px] sm:text-[10px] tracking-widest text-slate-300 font-bold uppercase">CONOCIMIENTO • EVIDENCIA • CUIDADO</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <div class="hidden sm:flex items-center space-x-2 bg-navy-800 border border-white/5 rounded-xl px-3 py-2">
+                    <i class="fa-solid fa-user-doctor text-tealmed-400"></i>
+                    <span class="text-xs font-bold">Dr. Martín Acosta</span>
+                </div>
+                <button onclick="document.documentElement.classList.toggle('dark')" class="p-2.5 rounded-xl bg-navy-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors border border-white/5" title="Cambiar tema" aria-label="Cambiar tema">
+                    <i class="fa-solid fa-moon dark:hidden"></i>
+                    <i class="fa-solid fa-sun hidden dark:block text-amber-400"></i>
+                </button>
+                <button onclick="logout()" class="flex items-center gap-2 p-2.5 rounded-xl bg-navy-800 hover:bg-red-600 text-slate-300 hover:text-white transition-colors border border-white/5 text-xs font-bold" title="Cerrar sesión" aria-label="Cerrar sesión">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                    <span class="hidden sm:inline">Cerrar sesión</span>
+                </button>
+                <button onclick="document.getElementById('sidebar').classList.toggle('-translate-x-full')" class="md:hidden p-2.5 rounded-xl bg-navy-800 text-slate-200" aria-label="Abrir lista de pacientes">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex-1 flex overflow-hidden max-w-7xl w-full mx-auto">
+        <!-- Sidebar: pacientes -->
+        <aside id="sidebar" class="fixed inset-y-0 left-0 z-20 w-72 bg-white dark:bg-navy-900 border-r border-slate-200 dark:border-navy-800 transform -translate-x-full md:translate-x-0 md:static transition-transform duration-300 ease-in-out flex flex-col pt-20 md:pt-0">
+            <div class="p-4 border-b border-slate-200 dark:border-navy-800 space-y-2">
+                <h2 class="text-[11px] font-black text-slate-400 uppercase tracking-wider">MIS PACIENTES</h2>
+                <div class="relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                    <input id="search" type="search" oninput="state.q=this.value;renderList()" class="w-full text-xs p-2.5 pl-9 rounded-xl border border-slate-200 dark:border-navy-800 bg-slate-50 dark:bg-navy-950 focus:ring-2 focus:ring-tealmed-400 focus:outline-none font-medium" placeholder="Buscar paciente..." aria-label="Buscar paciente">
+                </div>
+                <select onchange="state.filter=this.value;renderList()" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 dark:border-navy-800 bg-slate-50 dark:bg-navy-950 focus:ring-2 focus:ring-tealmed-400 focus:outline-none font-bold" aria-label="Filtrar por estado">
+                    <option value="in">Internados</option>
+                    <option value="out">De alta</option>
+                    <option value="all">Todos</option>
+                </select>
+            </div>
+            <div class="flex-1 overflow-y-auto p-4"><div id="patientList" class="space-y-2"></div></div>
+            <div class="p-3 border-t border-slate-200 dark:border-navy-800 bg-slate-50 dark:bg-navy-950/50 flex items-center justify-between text-xs font-semibold text-slate-500">
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span><span id="countLabel"></span></span>
+                <i class="fa-solid fa-shield-halved text-slate-400" title="Información clínica protegida"></i>
+            </div>
+        </aside>
+
+        <main class="flex-1 overflow-y-auto p-4 lg:p-6 space-y-6 bg-slate-100 dark:bg-navy-950">
+            <div id="patientHeaderCard" class="bg-white dark:bg-navy-900 rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-navy-800"></div>
+
+            <div class="bg-white dark:bg-navy-900 rounded-2xl p-5 shadow-sm border border-slate-200 dark:border-navy-800">
+                <div class="flex items-center space-x-2 mb-4">
+                    <i class="fa-solid fa-heart-pulse text-red-500 text-lg"></i>
+                    <h3 class="font-extrabold text-base">Últimos signos vitales</h3>
+                    <span class="text-[10px] font-bold text-slate-400">Registrados por enfermería</span>
+                </div>
+                <div id="vitalsGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3"></div>
+            </div>
+
+            <!-- Pestañas -->
+            <div class="bg-white dark:bg-navy-900 rounded-2xl shadow-sm border border-slate-200 dark:border-navy-800 overflow-hidden">
+                <div class="border-b border-slate-200 dark:border-navy-800 flex overflow-x-auto bg-slate-50 dark:bg-navy-950/40" role="tablist">
+                    <button onclick="switchTab('notes')" id="tab-notes" role="tab" class="px-5 py-3.5 text-xs font-extrabold border-b-2 border-tealmed-400 text-tealmed-400 flex items-center space-x-2 whitespace-nowrap">
+                        <i class="fa-solid fa-notes-medical"></i><span>Evolución médica</span>
+                    </button>
+                    <button onclick="switchTab('orders')" id="tab-orders" role="tab" class="px-5 py-3.5 text-xs font-extrabold border-b-2 border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 flex items-center space-x-2 whitespace-nowrap">
+                        <i class="fa-solid fa-prescription-bottle-medical"></i><span>Indicaciones</span>
+                    </button>
+                </div>
+
+                <!-- Evolución -->
+                <div id="content-notes" class="p-5 space-y-4">
+                    <form onsubmit="addNote(event)" class="space-y-2">
+                        <label for="noteText" class="block text-xs font-black text-slate-400 uppercase">Nueva nota de evolución</label>
+                        <textarea id="noteText" required class="w-full text-xs p-3 rounded-xl border border-slate-200 dark:border-navy-800 bg-slate-50 dark:bg-navy-950 focus:ring-2 focus:ring-tealmed-400 focus:outline-none h-24 resize-none font-medium" placeholder="Estado clínico, hallazgos y conducta a seguir..."></textarea>
+                        <div class="flex justify-end">
+                            <button type="submit" class="px-4 py-2.5 bg-navy-800 hover:bg-navy-900 text-white rounded-xl text-xs font-extrabold transition">Guardar nota</button>
+                        </div>
+                    </form>
+                    <div id="notesList" class="space-y-3 text-xs"></div>
+                </div>
+
+                <!-- Indicaciones -->
+                <div id="content-orders" class="p-5 hidden space-y-4">
+                    <form onsubmit="addOrder(event)" class="grid grid-cols-1 sm:grid-cols-6 gap-3 text-xs">
+                        <div class="sm:col-span-2">
+                            <label for="orderType" class="block text-xs font-black text-slate-400 uppercase mb-1">Tipo</label>
+                            <select id="orderType" class="w-full p-2.5 rounded-xl border border-slate-200 dark:border-navy-800 bg-slate-50 dark:bg-navy-950 focus:ring-2 focus:ring-tealmed-400 focus:outline-none font-bold">
+                                <option>Medicación</option><option>Estudio</option><option>Dieta</option><option>Cuidados</option>
+                            </select>
+                        </div>
+                        <div class="sm:col-span-3">
+                            <label for="orderText" class="block text-xs font-black text-slate-400 uppercase mb-1">Indicación</label>
+                            <input id="orderText" required class="w-full p-2.5 rounded-xl border border-slate-200 dark:border-navy-800 bg-slate-50 dark:bg-navy-950 focus:ring-2 focus:ring-tealmed-400 focus:outline-none font-medium" placeholder="Ej: Ibuprofeno 400 mg cada 8 h vía oral">
+                        </div>
+                        <div class="sm:col-span-1 flex items-end">
+                            <button type="submit" class="w-full px-3 py-2.5 bg-tealmed-400 hover:bg-tealmed-500 text-navy-950 rounded-xl font-extrabold transition">Indicar</button>
+                        </div>
+                    </form>
+                    <div id="ordersList" class="space-y-3 text-xs"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="toasts" class="fixed bottom-4 right-4 z-[60] space-y-2" role="status" aria-live="polite"></div>
+
+    <script>
+        const $ = id => document.getElementById(id);
+        const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        const fmt = iso => new Date(iso).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' });
+        const ago = h => new Date(Date.now() - h * 36e5).toISOString();
+
+        const seed = () => [
+            { id: 'p1', name: 'Juan Pérez', age: 62, room: 'Hab 302', dx: 'Postoperatorio reemplazo de cadera', allergy: 'Penicilina', out: false,
+              vitals: { pa: '135/85', fc: 82, fr: 18, spo2: 96, temp: 37.1 },
+              notes: [{ id: 'n1', date: ago(20), text: 'Dolor 6/10 en zona quirúrgica. Herida sin signos de infección. Se mantiene analgesia y se inicia kinesiología.' }],
+              orders: [{ id: 'o1', date: ago(22), type: 'Medicación', text: 'Paracetamol 1 g cada 8 h vía oral', active: true },
+                       { id: 'o2', date: ago(22), type: 'Estudio', text: 'Radiografía de cadera de control', active: true }] },
+            { id: 'p2', name: 'María Gómez', age: 54, room: 'Hab 108', dx: 'Diabetes tipo 2 y control glucémico', allergy: '', out: false,
+              vitals: { pa: '118/74', fc: 74, fr: 16, spo2: 98, temp: 36.5 },
+              notes: [{ id: 'n2', date: ago(8), text: 'Glucemia capilar 138 mg/dL. Paciente estable y orientada. Continúa esquema de insulina.' }],
+              orders: [{ id: 'o3', date: ago(30), type: 'Dieta', text: 'Dieta para diabético, 1800 kcal', active: true }] },
+            { id: 'p3', name: 'Ernesto Villalba', age: 71, room: 'Hab 214', dx: 'Neumonía adquirida en comunidad', allergy: '', out: true,
+              vitals: { pa: '125/80', fc: 78, fr: 17, spo2: 97, temp: 36.8 },
+              notes: [{ id: 'n3', date: ago(50), text: 'Afebril hace 48 h, buena mecánica respiratoria. Se otorga el alta con control ambulatorio.' }],
+              orders: [] }
+        ];
+
+        const KEY = 'nk_doctor_v1';
+        let patients = null;
+        try { patients = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
+        if (!patients) patients = seed();
+        const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(patients)); } catch (e) {} };
+        const state = { active: (patients.find(p => !p.out) || patients[0] || {}).id, q: '', filter: 'in', tab: 'notes' };
+        const current = () => patients.find(p => p.id === state.active);
+
+        function renderList() {
+            const q = state.q.trim().toLowerCase();
+            const rows = patients.filter(p =>
+                (state.filter === 'all' || (state.filter === 'out') === p.out) &&
+                (!q || (p.name + p.room + p.dx).toLowerCase().includes(q)));
+            $('countLabel').textContent = `${patients.filter(p => !p.out).length} internados`;
+            $('patientList').innerHTML = rows.length ? rows.map(p => {
+                const on = p.id === state.active;
+                return `<button onclick="selectPatient('${p.id}')" aria-current="${on}" class="w-full text-left p-3 rounded-xl border transition-all ${on ? 'bg-tealmed-400/10 border-tealmed-400 dark:bg-tealmed-400/20' : 'bg-slate-50 dark:bg-navy-800/60 border-slate-200/60 dark:border-navy-800 hover:border-tealmed-400'}">
+                    <div class="flex justify-between items-start gap-2">
+                        <span class="font-bold text-xs ${on ? 'text-tealmed-400' : ''}">${esc(p.name)}</span>
+                        <span class="text-[10px] font-extrabold px-2 py-0.5 rounded bg-slate-200 dark:bg-navy-950 text-slate-600 dark:text-slate-300 whitespace-nowrap">${esc(p.room)}</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1 truncate font-medium">${esc(p.dx)}</p>
+                </button>`;
+            }).join('') : '<p class="text-xs text-slate-500 font-medium p-2">No hay pacientes con ese criterio.</p>';
+        }
+
+        function renderPatient() {
+            const p = current();
+            if (!p) {
+                $('patientHeaderCard').innerHTML = '<p class="text-xs font-medium text-slate-500">Selecciona un paciente de la lista para ver su ficha.</p>';
+                ['vitalsGrid', 'notesList', 'ordersList'].forEach(id => $(id).innerHTML = '');
+                return;
+            }
+            $('patientHeaderCard').innerHTML = `
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-12 h-12 rounded-2xl bg-tealmed-400/10 text-tealmed-400 flex items-center justify-center text-xl font-black border border-tealmed-400/20">${esc(p.name.charAt(0))}</div>
+                        <div>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <h2 class="font-black text-lg">${esc(p.name)}</h2>
+                                <span class="text-xs bg-slate-100 dark:bg-navy-800 px-2.5 py-0.5 rounded-full font-bold text-slate-600 dark:text-slate-300">${esc(p.age)} años</span>
+                                <span class="text-[10px] font-extrabold px-2.5 py-1 rounded-full ${p.out ? 'bg-slate-200 dark:bg-navy-950 text-slate-500' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'}">${p.out ? 'De alta' : 'Internado'}</span>
+                            </div>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">${esc(p.room)} • Diagnóstico: <span class="text-slate-800 dark:text-slate-100 font-bold">${esc(p.dx)}</span></p>
+                            <p class="text-xs mt-1 font-bold ${p.allergy ? 'text-red-500' : 'text-slate-400'}"><i class="fa-solid fa-triangle-exclamation mr-1"></i>${p.allergy ? 'Alergia: ' + esc(p.allergy) : 'Sin alergias conocidas'}</p>
+                        </div>
+                    </div>
+                    <button onclick="askDischarge()" class="text-xs px-3.5 py-2 rounded-xl font-bold flex items-center space-x-1.5 transition ${p.out ? 'bg-tealmed-400 hover:bg-tealmed-500 text-navy-950' : 'bg-slate-100 dark:bg-navy-800 hover:bg-slate-200 dark:hover:bg-navy-950 text-slate-700 dark:text-slate-200'}">
+                        <i class="fa-solid ${p.out ? 'fa-rotate-left' : 'fa-door-open'} ${p.out ? '' : 'text-tealmed-400'}"></i>
+                        <span>${p.out ? 'Reingresar paciente' : 'Dar de alta'}</span>
+                    </button>
+                </div>`;
+
+            const v = p.vitals;
+            const box = (l, val, unit, cls = '') => `<div class="bg-slate-50 dark:bg-navy-950 p-3 rounded-xl border border-slate-100 dark:border-navy-800">
+                <span class="text-[10px] text-slate-400 font-black uppercase">${l}</span>
+                <p class="font-black text-sm mt-0.5 ${cls}">${esc(val)}</p><span class="text-[9px] text-slate-400 font-bold">${unit}</span></div>`;
+            $('vitalsGrid').innerHTML = box('P. Arterial', v.pa, 'mmHg') + box('F. Cardíaca', v.fc, 'lpm', 'text-emerald-500') +
+                box('F. Resp.', v.fr, 'rpm') + box('Sat SpO2', v.spo2 + '%', 'Aire ambiente', 'text-tealmed-400') + box('Temp', v.temp + ' °C', 'Axilar', 'text-amber-500');
+
+            renderNotes(); renderOrders();
+        }
+
+        function renderNotes() {
+            const p = current(); if (!p) return;
+            const list = [...p.notes].sort((a, b) => b.date.localeCompare(a.date));
+            $('notesList').innerHTML = list.length ? list.map(n => `
+                <div class="p-3 bg-slate-50 dark:bg-navy-950 rounded-xl border border-slate-200 dark:border-navy-800 space-y-1">
+                    <div class="flex items-center justify-between">
+                        <span class="text-tealmed-400 font-extrabold"><i class="fa-solid fa-user-doctor mr-1.5"></i>Dr. Martín Acosta</span>
+                        <span class="flex items-center gap-3 text-slate-400 font-bold">${fmt(n.date)}
+                            <button onclick="deleteNote('${n.id}')" class="hover:text-red-500 transition" title="Eliminar nota" aria-label="Eliminar nota"><i class="fa-solid fa-trash"></i></button></span>
+                    </div>
+                    <p class="leading-relaxed whitespace-pre-line font-medium">${esc(n.text)}</p>
+                </div>`).join('') : '<p class="text-slate-500 font-medium">Todavía no hay notas. Escribe la primera arriba.</p>';
+        }
+
+        function renderOrders() {
+            const p = current(); if (!p) return;
+            const icon = { 'Medicación': 'fa-pills', 'Estudio': 'fa-x-ray', 'Dieta': 'fa-utensils', 'Cuidados': 'fa-hand-holding-medical' };
+            const list = [...p.orders].sort((a, b) => b.date.localeCompare(a.date));
+            $('ordersList').innerHTML = list.length ? list.map(o => `
+                <div class="p-3 bg-slate-50 dark:bg-navy-950 rounded-xl border border-slate-200 dark:border-navy-800 flex items-center gap-3 ${o.active ? '' : 'opacity-60'}">
+                    <i class="fa-solid ${icon[o.type] || 'fa-file-medical'} text-tealmed-400 w-5 text-center"></i>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-bold ${o.active ? '' : 'line-through'}">${esc(o.text)}</p>
+                        <p class="text-[11px] text-slate-400 font-medium">${esc(o.type)} • ${fmt(o.date)} • ${o.active ? 'Vigente' : 'Suspendida'}</p>
+                    </div>
+                    <button onclick="toggleOrder('${o.id}')" class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-navy-800 hover:bg-slate-200 dark:hover:bg-navy-900 font-bold transition">${o.active ? 'Suspender' : 'Reactivar'}</button>
+                </div>`).join('') : '<p class="text-slate-500 font-medium">No hay indicaciones. Agrega la primera arriba.</p>';
+        }
+
+        function selectPatient(id) {
+            state.active = id;
+            $('sidebar').classList.add('-translate-x-full');
+            renderList(); renderPatient();
+        }
+
+        function switchTab(tab) {
+            ['notes', 'orders'].forEach(t => {
+                $('content-' + t).classList.toggle('hidden', t !== tab);
+                const b = $('tab-' + t), on = t === tab;
+                b.classList.toggle('border-tealmed-400', on); b.classList.toggle('text-tealmed-400', on);
+                b.classList.toggle('border-transparent', !on); b.classList.toggle('text-slate-500', !on);
+                b.setAttribute('aria-selected', on);
+            });
+        }
+
+        // ---- Acciones ----
+        function addNote(e) {
+            e.preventDefault();
+            const p = current(); if (!p) return;
+            p.notes.push({ id: 'n' + Date.now(), date: new Date().toISOString(), text: $('noteText').value.trim() });
+            $('noteText').value = '';
+            persist(); renderNotes(); toast('Nota de evolución guardada.');
+        }
+
+        function deleteNote(id) {
+            confirmDialog({ icon: 'fa-trash', title: '¿Eliminar esta nota?', text: 'La nota se quitará de la historia del paciente y no se puede recuperar.', ok: 'Eliminar',
+                onOk: () => { const p = current(); p.notes = p.notes.filter(n => n.id !== id); persist(); renderNotes(); toast('Nota eliminada.'); } });
+        }
+
+        function addOrder(e) {
+            e.preventDefault();
+            const p = current(); if (!p) return;
+            p.orders.push({ id: 'o' + Date.now(), date: new Date().toISOString(), type: $('orderType').value, text: $('orderText').value.trim(), active: true });
+            $('orderText').value = '';
+            persist(); renderOrders(); toast('Indicación registrada.');
+        }
+
+        function toggleOrder(id) {
+            const o = current().orders.find(x => x.id === id);
+            o.active = !o.active;
+            persist(); renderOrders(); toast(o.active ? 'Indicación reactivada.' : 'Indicación suspendida.');
+        }
+
+        function askDischarge() {
+            const p = current();
+            confirmDialog({
+                icon: p.out ? 'fa-rotate-left' : 'fa-door-open',
+                title: p.out ? `¿Reingresar a ${p.name}?` : `¿Dar de alta a ${p.name}?`,
+                text: p.out ? 'El paciente volverá a figurar como internado.' : 'El paciente pasará a la lista de pacientes de alta. Podrás reingresarlo si hace falta.',
+                ok: p.out ? 'Reingresar' : 'Dar de alta',
+                onOk: () => { p.out = !p.out; persist(); renderList(); renderPatient(); toast(p.out ? 'Paciente dado de alta.' : 'Paciente reingresado.'); }
+            });
+        }
+
+        function confirmDialog({ icon, title, text, ok, onOk }) {
+            if ($('confirmDialog')) return;
+            const prev = document.activeElement;
+            const d = document.createElement('dialog');
+            d.id = 'confirmDialog';
+            d.className = 'w-[calc(100%-2rem)] max-w-md m-auto p-6 rounded-2xl bg-white dark:bg-navy-900 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-navy-800 shadow-2xl backdrop:bg-navy-950/70 backdrop:backdrop-blur-sm';
+            d.setAttribute('aria-labelledby', 'cdTitle');
+            d.innerHTML = `
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-10 h-10 rounded-xl bg-tealmed-400/10 text-tealmed-400 flex items-center justify-center"><i class="fa-solid ${icon}"></i></div>
+                    <h3 id="cdTitle" class="font-extrabold text-base">${esc(title)}</h3>
+                </div>
+                <p class="text-xs font-medium text-slate-500 dark:text-slate-300 leading-relaxed">${esc(text)}</p>
+                <div class="flex justify-end gap-2 mt-6">
+                    <button type="button" data-cancel autofocus class="px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-navy-800 text-xs font-bold hover:bg-slate-200 dark:hover:bg-navy-950 transition">Cancelar</button>
+                    <button type="button" data-ok class="px-4 py-2.5 rounded-xl bg-tealmed-400 hover:bg-tealmed-500 text-navy-950 text-xs font-extrabold transition">${esc(ok)}</button>
+                </div>`;
+            d.querySelector('[data-cancel]').onclick = () => d.close();
+            d.querySelector('[data-ok]').onclick = () => { d.close(); onOk(); };
+            d.addEventListener('close', () => { d.remove(); prev?.focus(); }, { once: true });
+            document.body.appendChild(d);
+            d.showModal();
+        }
+
+        function logout() {
+            confirmDialog({ icon: 'fa-right-from-bracket', title: '¿Cerrar sesión?', text: 'Los cambios no guardados se perderán. ¿Deseas continuar?', ok: 'Cerrar sesión',
+                onOk: () => window.location.replace('login.html') }); // Ajustar la ruta si es necesario
+        }
+
+        function toast(msg) {
+            const t = document.createElement('div');
+            t.className = 'bg-navy-900 text-white text-xs font-bold px-4 py-3 rounded-xl shadow-lg border border-tealmed-400/30 flex items-center gap-2';
+            t.innerHTML = `<i class="fa-solid fa-circle-check text-tealmed-400"></i><span>${esc(msg)}</span>`;
+            $('toasts').appendChild(t);
+            setTimeout(() => t.remove(), 3000);
+        }
+
+        renderList(); renderPatient();
+    </script>
+</body>
+</html>
