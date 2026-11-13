@@ -1,50 +1,164 @@
 import React, { useState } from 'react';
 import appLogo from './assets/applogo.png';
 
+const apiBase = import.meta.env.DEV
+  ? `http://${window.location.hostname}:8080`
+  : '';
+
+function AdminPanel() {
+  const [resource, setResource] = useState('admins');
+  const [payload, setPayload] = useState('{}');
+  const [message, setMessage] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  async function handleCreate(event) {
+    event.preventDefault();
+    if (saving) return;
+    setMessage('');
+
+    let body;
+    try {
+      body = JSON.parse(payload);
+      if (!body || typeof body !== 'object' || Array.isArray(body)) {
+        throw new Error('Invalid payload');
+      }
+    } catch {
+      setMessage('Introduce un objeto JSON válido con los campos requeridos por el endpoint.');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const response = await fetch(`${apiBase}/${resource}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(body),
+      });
+      const text = await response.text();
+      let result;
+      try {
+        result = JSON.parse(text);
+      } catch {
+        result = null;
+      }
+      if (response.status === 401 || response.status === 403) {
+        setMessage('No tienes autorización para realizar esta operación. Verifica tu sesión de administrador.');
+      } else if (!response.ok) {
+        const detail = result?.message || result?.error;
+        setMessage(`No se pudo crear el registro (HTTP ${response.status}).${typeof detail === 'string' ? ` ${detail}` : ''}`);
+      } else {
+        setMessage('Registro creado correctamente.');
+        setPayload('{}');
+      }
+    } catch {
+      setMessage('No se pudo conectar con el servidor. Inténtalo nuevamente más tarde.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <main className="nk-admin">
+      <style>{`
+        * { box-sizing: border-box; }
+        body { margin: 0; }
+        .nk-admin { min-height: 100vh; background: #f7fafc; color: #122b48; padding: 40px 24px; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+        .nk-admin-panel { max-width: 800px; margin: 0 auto; }
+        .nk-admin-header { display: flex; align-items: center; gap: 20px; margin-bottom: 32px; }
+        .nk-admin-header img { width: 80px; height: 80px; object-fit: contain; }
+        .nk-admin h1 { margin: 0 0 8px; font-size: 28px; }
+        .nk-admin p { line-height: 1.6; }
+        .nk-admin-form { background: white; padding: 28px; border: 1px solid #d7e0e9; border-radius: 14px; }
+        .nk-admin label { display: block; margin-bottom: 10px; font-weight: 600; }
+        .nk-admin select, .nk-admin textarea { display: block; width: 100%; padding: 12px; border: 1px solid #d7e0e9; border-radius: 8px; color: #122b48; background: white; font: inherit; margin-bottom: 24px; }
+        .nk-admin textarea { min-height: 260px; resize: vertical; font-family: monospace; }
+        .nk-admin button { padding: 14px 24px; border: 0; border-radius: 8px; background: #073b73; color: white; font: inherit; cursor: pointer; }
+        .nk-admin button:disabled { opacity: .6; cursor: wait; }
+        .nk-admin :focus-visible { outline: 3px solid #16b6c2; outline-offset: 3px; }
+        .nk-admin-message { padding: 14px; background: #eef5f8; border-radius: 8px; overflow-wrap: anywhere; }
+      `}</style>
+      <div className="nk-admin-panel">
+        <header className="nk-admin-header">
+          <img src={appLogo} alt="Nursing Knowledge AI" />
+          <div><h1>Panel de administración</h1><p>Crear administradores, médicos y personal de enfermería.</p></div>
+        </header>
+        <form className="nk-admin-form" onSubmit={handleCreate} aria-busy={saving}>
+          <label htmlFor="admin-resource">Tipo de registro</label>
+          <select id="admin-resource" value={resource} disabled={saving} onChange={(event) => {
+            setResource(event.target.value);
+            setPayload('{}');
+            setMessage('');
+          }}>
+            <option value="admins">Administrador</option>
+            <option value="doctors">Médico</option>
+            <option value="nurses">Enfermero/a</option>
+          </select>
+          <p>Endpoint: <code>POST /{resource}</code></p>
+          <p id="payload-help">Introduce los datos del nuevo registro en JSON, con los campos que exige el backend para este tipo de usuario. Las rutas no especifican los campos requeridos.</p>
+          <label htmlFor="admin-payload">Datos del registro (JSON)</label>
+          <textarea id="admin-payload" value={payload} onChange={(event) => {
+            setPayload(event.target.value);
+            setMessage('');
+          }} aria-describedby="payload-help" disabled={saving} spellCheck={false} required />
+          <button type="submit" disabled={saving}>{saving ? 'Creando…' : 'Crear registro'}</button>
+          {message && <p className="nk-admin-message" role="status">{message}</p>}
+        </form>
+      </div>
+    </main>
+  );
+}
+
 export default function App() {
   const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState('');
+  const [isAdmin, setIsAdmin] = useState(false);
 
   async function handleSubmit(event) {
     event.preventDefault();
     setMessage('');
 
     const formData = new FormData(event.currentTarget);
-    const username = String(formData.get('username') || '').trim();
+    const email = String(formData.get('email') || '').trim();
     const password = String(formData.get('password') || '');
-    const authEndpoint = '/api/auth/login'; // Reemplazar por el endpoint real.
-    const useMockAuth = true; // Solo para pruebas: desactivar al integrar el backend.
+    // En desarrollo, enviar la solicitud a Flask (8080), no a Vite (5173).
+    // Flask debe permitir CORS desde http://localhost:5173 con credenciales.
+    const authEndpoint = `${apiBase}/login`;
 
     try {
-      let authenticated = false;
+      const response = await fetch(authEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email, password }),
+      });
 
-      if (useMockAuth) {
-        // Estas credenciales en el frontend no ofrecen seguridad real.
-        authenticated = username === 'admin' && password === 'nkia';
-      } else {
-        const response = await fetch(authEndpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ username, password }),
-        });
-
-        if (response.status !== 401 && response.status !== 403 && !response.ok) {
-          throw new Error('Authentication service unavailable');
-        }
-        authenticated = response.ok;
-      }
-
-      if (!authenticated) {
-        setMessage('Usuario o contraseña incorrectos.');
+      if (response.status === 401 || response.status === 403) {
+        setMessage('Correo electrónico o contraseña incorrectos.');
         return;
       }
+      if (!response.ok) {
+        throw new Error('Authentication service unavailable');
+      }
 
+      const result = await response.json();
+      if (result.collection === 'admin') {
+        // La autorización de los endpoints también debe validarse en Flask.
+        setIsAdmin(true);
+        return;
+      }
+      if (!['doctor', 'nurse', 'patient'].includes(result.collection)) {
+        setMessage('La respuesta de autenticación no contiene una colección válida.');
+        return;
+      }
       window.location.assign('/src/views/landing.html');
     } catch {
       setMessage('No se pudo iniciar sesión. Inténtalo nuevamente más tarde.');
     }
   }
+
+  if (isAdmin) return <AdminPanel />;
+
   return (
     <main className="nk-login">
       <style>{`
@@ -109,10 +223,10 @@ export default function App() {
           <p className="nk-intro">Ingresa tus credenciales para acceder a tu espacio.</p>
           <form onSubmit={handleSubmit} onChange={() => setMessage('')}>
             <div className="nk-field">
-              <label className="nk-label" htmlFor="username">Usuario</label>
+              <label className="nk-label" htmlFor="email">Correo electrónico</label>
               <div className="nk-input-wrap">
                 <svg className="nk-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><circle cx="12" cy="8" r="4" /><path d="M4 21v-2a8 8 0 0 1 16 0v2" /></svg>
-                <input className="nk-input" id="username" name="username" type="text" autoComplete="username" placeholder="Ingresa tu usuario" required maxLength={254} autoCapitalize="none" spellCheck={false} />
+                <input className="nk-input" id="email" name="email" type="email" autoComplete="email" placeholder="Ingresa tu correo electrónico" required maxLength={254} autoCapitalize="none" spellCheck={false} />
               </div>
             </div>
             <div className="nk-field">
@@ -125,7 +239,7 @@ export default function App() {
                 </button>
               </div>
             </div>
-            <p className="nk-hint">Utiliza el usuario asignado por tu institución.</p>
+            <p className="nk-hint">Utiliza el correo electrónico asignado por tu institución.</p>
             <button className="nk-submit" type="submit">Iniciar sesión <span aria-hidden="true">→</span></button>
             {message && <p className="nk-message" role="status">{message}</p>}
           </form>
